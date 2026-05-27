@@ -9,7 +9,7 @@ const menuItems = [
     name: 'Roti Tawar Premium',
     desc: 'Dibuat dari susu segar pilihan, teksturnya super lembut dan mengembang sempurna setiap hari.',
     price: 'Rp 20.000',
-    img: '/roti.png',
+    img: '/roti.webp',
     tag: 'Best Seller',
     tagColor: '#e53e3e',
   },
@@ -18,7 +18,7 @@ const menuItems = [
     name: 'Croissant Butter',
     desc: 'Lapis demi lapis butter asli Prancis, renyah di luar dan meleleh di dalam.',
     price: 'Rp 25.000',
-    img: '/croissant.png',
+    img: '/croissant.webp',
     tag: 'Favorit',
     tagColor: '#7c3aed',
   },
@@ -27,7 +27,7 @@ const menuItems = [
     name: 'Kue Cokelat Klasik',
     desc: 'Dark chocolate premium dengan ganache glossy, manis yang seimbang dan bikin ketagihan.',
     price: 'Rp 45.000',
-    img: '/kue.png',
+    img: '/kue.webp',
     tag: 'Spesial',
     tagColor: '#d97706',
   },
@@ -36,7 +36,7 @@ const menuItems = [
     name: 'Roti Kayu Manis',
     desc: 'Gulugan roti hangat dengan cinnamon sugar dan cream cheese frosting yang legit.',
     price: 'Rp 30.000',
-    img: '/roti.png',
+    img: '/roti.webp',
     tag: 'Baru',
     tagColor: '#059669',
   },
@@ -45,7 +45,7 @@ const menuItems = [
     name: 'Pain au Chocolat',
     desc: 'Pastri berlapis dengan batangan cokelat di dalamnya, aroma harum saat dipanggang.',
     price: 'Rp 28.000',
-    img: '/croissant.png',
+    img: '/croissant.webp',
     tag: 'Favorit',
     tagColor: '#7c3aed',
   },
@@ -54,7 +54,7 @@ const menuItems = [
     name: 'Lapis Surabaya',
     desc: 'Kue lapis tradisional khas Indonesia dengan tekstur lembut dan kaya mentega.',
     price: 'Rp 65.000',
-    img: '/kue.png',
+    img: '/kue.webp',
     tag: 'Signature',
     tagColor: '#b91c1c',
   },
@@ -90,6 +90,104 @@ export default function App() {
   const [toast, setToast] = useState('')
   const [imgError, setImgError] = useState(false)
 
+  // ── CART STATES & LOGIC ──
+  interface CartItem {
+    id: number;
+    name: string;
+    price: string;
+    img: string;
+    quantity: number;
+  }
+
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [custName, setCustName] = useState('')
+  const [custAddress, setCustAddress] = useState('')
+  const [custNotes, setCustNotes] = useState('')
+
+  const parsePrice = (priceStr: string): number => {
+    return parseInt(priceStr.replace(/[^0-9]/g, ''), 10)
+  }
+
+  const formatPrice = (num: number): string => {
+    return 'Rp ' + num.toLocaleString('id-ID')
+  }
+
+  const addToCart = (item: typeof menuItems[0]) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === item.id)
+      if (existing) {
+        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i)
+      }
+      return [...prev, { id: item.id, name: item.name, price: item.price, img: item.img, quantity: 1 }]
+    })
+    setToast(`Ditambahkan ke keranjang: ${item.name}`)
+    setTimeout(() => setToast(''), 2000)
+  }
+
+  const removeFromCart = (id: number) => {
+    const item = cart.find(i => i.id === id)
+    setCart(prev => prev.filter(i => i.id !== id))
+    if (item) {
+      setToast(`Dihapus dari keranjang: ${item.name}`)
+      setTimeout(() => setToast(''), 2000)
+    }
+  }
+
+  const increaseQty = (id: number) => {
+    setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity + 1 } : i))
+  }
+
+  const decreaseQty = (id: number) => {
+    const existing = cart.find(i => i.id === id)
+    if (existing && existing.quantity === 1) {
+      removeFromCart(id)
+    } else {
+      setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i))
+    }
+  }
+
+  const getItemQty = (id: number) => {
+    const item = cart.find(i => i.id === id)
+    return item ? item.quantity : 0
+  }
+
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const totalPrice = cart.reduce((sum, item) => sum + (parsePrice(item.price) * item.quantity), 0)
+
+  const handleCartOrder = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (cart.length === 0) return
+    if (!custName.trim() || !custAddress.trim()) {
+      setToast('Silakan isi nama dan alamat pengiriman!')
+      setTimeout(() => setToast(''), 3000)
+      return
+    }
+
+    const itemsText = cart.map(item => {
+      const sub = parsePrice(item.price) * item.quantity
+      return `- *${item.quantity}x ${item.name}* (@${item.price})\n  Subtotal: *${formatPrice(sub)}*`
+    }).join('\n\n')
+
+    const msg = encodeURIComponent(
+      `Halo Shofi Bakery! Saya ingin memesan:\n\n` +
+      `*RINCIAN PESANAN:*\n` +
+      `----------------------------------------\n` +
+      `${itemsText}\n\n` +
+      `----------------------------------------\n` +
+      `*Total Pembayaran: ${formatPrice(totalPrice)}*\n\n` +
+      `*INFORMASI PENGIRIMAN:*\n` +
+      `- *Nama:* ${custName.trim()}\n` +
+      `- *Alamat:* ${custAddress.trim()}\n` +
+      (custNotes.trim() ? `- *Catatan:* ${custNotes.trim()}\n` : '') +
+      `\nMohon konfirmasi ketersediaan dan total ongkirnya. Terima kasih!`
+    )
+
+    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank')
+    setToast('Membuka WhatsApp untuk mengirim pesanan...')
+    setTimeout(() => setToast(''), 3000)
+  }
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', onScroll)
@@ -103,18 +201,6 @@ export default function App() {
       el.scrollIntoView({ behavior: 'smooth' })
     }
     setMenuOpen(false)
-  }
-
-  const handleOrder = (name: string, price: string) => {
-    const msg = encodeURIComponent(
-      `Halo Shofi Bakery! Saya ingin memesan:\n\n` +
-      `Produk: *${name}*\n` +
-      `Harga: *${price}*\n\n` +
-      `Mohon konfirmasi ketersediaan dan cara pembayarannya. Terima kasih!`
-    )
-    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank')
-    setToast(`Membuka WhatsApp untuk memesan ${name}...`)
-    setTimeout(() => setToast(''), 3000)
   }
 
   const navLinks = [
@@ -156,6 +242,21 @@ export default function App() {
           </button>
 
           <button
+            className="nav-cart-trigger"
+            onClick={() => setIsCartOpen(true)}
+            aria-label="Keranjang Belanja"
+            type="button"
+            style={{ marginLeft: '10px' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            {totalItems > 0 && <span className="nav-cart-badge">{totalItems}</span>}
+          </button>
+
+          <button
             className="hamburger"
             onClick={() => setMenuOpen(o => !o)}
             aria-label="Toggle menu"
@@ -181,7 +282,7 @@ export default function App() {
       {/* ── HERO ── */}
       <section id="home" className="hero">
         <div className="hero-bg-wrap">
-          <img src="/hero.png" alt="Shofi Bakery" className="hero-bg-img" />
+          <img src="/hero.webp" alt="Shofi Bakery" className="hero-bg-img" fetchPriority="high" />
           <div className="hero-overlay" />
           <div className="hero-gradient" />
         </div>
@@ -297,14 +398,25 @@ export default function App() {
                   <p className="card-desc">{item.desc}</p>
                   <div className="card-foot">
                     <span className="card-price">{item.price}</span>
-                    <button
-                      className="card-btn"
-                      onClick={() => handleOrder(item.name, item.price)}
-                      type="button"
-                    >
-                      Pesan via WA
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.5 2C6.253 2 2 6.253 2 11.5c0 1.938.57 3.744 1.55 5.253L2 22l5.356-1.534A9.46 9.46 0 0011.5 21C16.747 21 21 16.747 21 11.5S16.747 2 11.5 2zm0 17c-1.66 0-3.207-.497-4.497-1.35l-.323-.202-3.179.91.924-3.096-.22-.342A7.473 7.473 0 014 11.5C4 7.364 7.364 4 11.5 4S19 7.364 19 11.5 15.636 19 11.5 19z"/></svg>
-                    </button>
+                    {getItemQty(item.id) > 0 ? (
+                      <div className="card-qty-control">
+                        <button onClick={() => decreaseQty(item.id)} className="qty-btn" type="button">−</button>
+                        <span className="qty-val">{getItemQty(item.id)}</span>
+                        <button onClick={() => increaseQty(item.id)} className="qty-btn" type="button">+</button>
+                      </div>
+                    ) : (
+                      <button
+                        className="card-btn"
+                        onClick={() => addToCart(item)}
+                        type="button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '4px' }}>
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Tambah
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -346,7 +458,7 @@ export default function App() {
                   </div>
                 ) : (
                   <img
-                    src="/hero.png"
+                    src="/hero.webp"
                     alt="Dapur Shofi Bakery"
                     className="about-img"
                     onError={() => setImgError(true)}
@@ -496,6 +608,146 @@ export default function App() {
           <p>2024 Shofi Bakery. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* ── FLOATING CART BUTTON ── */}
+      {totalItems > 0 && (
+        <button
+          className="floating-cart-btn"
+          onClick={() => setIsCartOpen(true)}
+          aria-label="Buka Keranjang"
+          type="button"
+        >
+          <div className="cart-btn-inner">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <span className="cart-badge">{totalItems}</span>
+          </div>
+        </button>
+      )}
+
+      {/* ── CART SIDEBAR DRAWER ── */}
+      <div className={`cart-drawer-overlay ${isCartOpen ? 'open' : ''}`} onClick={() => setIsCartOpen(false)} />
+      
+      <div className={`cart-drawer ${isCartOpen ? 'open' : ''}`}>
+        <div className="cart-drawer-header">
+          <div className="cart-header-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--amber)' }}>
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <h2>Keranjang</h2>
+            <span className="cart-header-count">{totalItems} Varian</span>
+          </div>
+          <button className="cart-close-btn" onClick={() => setIsCartOpen(false)} aria-label="Tutup Keranjang" type="button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div className="cart-drawer-body">
+          {cart.length === 0 ? (
+            <div className="cart-empty-state">
+              <div className="empty-icon-wrap">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </div>
+              <h3>Keranjang belanja Anda kosong</h3>
+              <p>Tambahkan roti dan kue lezat kami ke keranjang untuk mulai melakukan pemesanan.</p>
+              <button className="btn-primary" onClick={() => { setIsCartOpen(false); scrollTo('menu'); }} type="button" style={{ marginTop: '1rem' }}>
+                Mulai Belanja
+              </button>
+            </div>
+          ) : (
+            <div className="cart-items-list">
+              {cart.map(item => {
+                const itemSubtotal = parsePrice(item.price) * item.quantity
+                return (
+                  <div key={item.id} className="cart-item-card">
+                    <img src={item.img} alt={item.name} className="cart-item-img" />
+                    <div className="cart-item-info">
+                      <h4 className="cart-item-name">{item.name}</h4>
+                      <div className="cart-item-price-row">
+                        <span className="cart-item-price-unit">{item.price}</span>
+                        <span className="cart-item-price-sub">{formatPrice(itemSubtotal)}</span>
+                      </div>
+                      <div className="cart-item-actions">
+                        <div className="cart-qty-selector">
+                          <button onClick={() => decreaseQty(item.id)} className="cart-qty-btn" type="button">−</button>
+                          <span className="cart-qty-val">{item.quantity}</span>
+                          <button onClick={() => increaseQty(item.id)} className="cart-qty-btn" type="button">+</button>
+                        </div>
+                        <button onClick={() => removeFromCart(item.id)} className="cart-remove-btn" aria-label="Hapus produk" type="button">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div className="cart-drawer-footer">
+            <div className="cart-summary-row">
+              <span>Total Pemesanan:</span>
+              <span className="cart-summary-total">{formatPrice(totalPrice)}</span>
+            </div>
+            
+            <form className="cart-checkout-form" onSubmit={handleCartOrder}>
+              <div className="form-group-sm">
+                <label htmlFor="cart-nama">Nama Penerima</label>
+                <input
+                  id="cart-nama"
+                  type="text"
+                  placeholder="Masukkan nama lengkap Anda"
+                  value={custName}
+                  onChange={e => setCustName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group-sm">
+                <label htmlFor="cart-alamat">Alamat Lengkap Pengiriman</label>
+                <textarea
+                  id="cart-alamat"
+                  placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan/kecamatan"
+                  value={custAddress}
+                  onChange={e => setCustAddress(e.target.value)}
+                  rows={2}
+                  required
+                />
+              </div>
+              <div className="form-group-sm" style={{ marginBottom: '0.8rem' }}>
+                <label htmlFor="cart-catatan">Catatan Pesanan (Opsional)</label>
+                <input
+                  id="cart-catatan"
+                  type="text"
+                  placeholder="Contoh: jangan dipotong, tambah ucapan..."
+                  value={custNotes}
+                  onChange={e => setCustNotes(e.target.value)}
+                />
+              </div>
+              <button type="submit" className="cart-checkout-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '8px' }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.5 2C6.253 2 2 6.253 2 11.5c0 1.938.57 3.744 1.55 5.253L2 22l5.356-1.534A9.46 9.46 0 0011.5 21C16.747 21 21 16.747 21 11.5S16.747 2 11.5 2zm0 17c-1.66 0-3.207-.497-4.497-1.35l-.323-.202-3.179.91.924-3.096-.22-.342A7.473 7.473 0 014 11.5C4 7.364 7.364 4 11.5 4S19 7.364 19 11.5 15.636 19 11.5 19z"/></svg>
+                Kirim Pesanan via WA
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
 
     </div>
   )
