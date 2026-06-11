@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
-const WA_NUMBER = '6281234567890' // Ganti dengan nomor WA pemilik toko
+const WA_NUMBER = '6285846587021' // Nomor WA pemilik toko
 
 const menuItems = [
   {
@@ -166,24 +166,23 @@ export default function App() {
 
     const itemsText = cart.map(item => {
       const sub = parsePrice(item.price) * item.quantity
-      return `- *${item.quantity}x ${item.name}* (@${item.price})\n  Subtotal: *${formatPrice(sub)}*`
-    }).join('\n\n')
+      return `- ${item.quantity}x ${item.name} (${item.price}) = ${formatPrice(sub)}`
+    }).join('\n')
 
-    const msg = encodeURIComponent(
-      `Halo Shofi Bakery! Saya ingin memesan:\n\n` +
-      `*RINCIAN PESANAN:*\n` +
-      `----------------------------------------\n` +
-      `${itemsText}\n\n` +
-      `----------------------------------------\n` +
-      `*Total Pembayaran: ${formatPrice(totalPrice)}*\n\n` +
-      `*INFORMASI PENGIRIMAN:*\n` +
-      `- *Nama:* ${custName.trim()}\n` +
-      `- *Alamat:* ${custAddress.trim()}\n` +
-      (custNotes.trim() ? `- *Catatan:* ${custNotes.trim()}\n` : '') +
-      `\nMohon konfirmasi ketersediaan dan total ongkirnya. Terima kasih!`
-    )
+    const rawMsg =
+      `Halo Shofi Bakery! Saya ingin memesan:\n` +
+      `${itemsText}\n` +
+      `Total: ${formatPrice(totalPrice)}\n` +
+      `Nama: ${custName.trim()}\n` +
+      `Alamat: ${custAddress.trim()}` +
+      (custNotes.trim() ? `\nCatatan: ${custNotes.trim()}` : '') +
+      `\nMohon konfirmasi. Terima kasih!`
 
-    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank')
+    const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(rawMsg)}`
+    const newTab = window.open(waUrl, '_blank')
+    if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+      window.location.href = waUrl
+    }
     setToast('Membuka WhatsApp untuk mengirim pesanan...')
     setTimeout(() => setToast(''), 3000)
   }
@@ -541,7 +540,7 @@ export default function App() {
             <div className="contact-info">
               {[
                 { label: 'Alamat', val: 'Jl. Raya Bakery No. 12, Kota Anda', path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z' },
-                { label: 'WhatsApp', val: '0812-3456-7890', path: 'M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z' },
+                { label: 'WhatsApp', val: '0858-4658-7021', path: 'M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z' },
                 { label: 'Jam Buka', val: 'Senin - Sabtu: 06.00 - 20.00 | Minggu: 07.00 - 17.00', path: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z' },
                 { label: 'Instagram', val: '@shofibakery', path: 'M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 01-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 017.8 2m-.2 2A3.6 3.6 0 004 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 003.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 011.25 1.25A1.25 1.25 0 0117.25 8 1.25 1.25 0 0116 6.75a1.25 1.25 0 011.25-1.25M12 7a5 5 0 015 5 5 5 0 01-5 5 5 5 0 01-5-5 5 5 0 015-5m0 2a3 3 0 00-3 3 3 3 0 003 3 3 3 0 003-3 3 3 0 00-3-3z' },
               ].map(c => (
@@ -562,8 +561,11 @@ export default function App() {
               const form = e.target as HTMLFormElement
               const nama = (form.querySelector('#nama') as HTMLInputElement)?.value
               const pesan = (form.querySelector('#pesan') as HTMLTextAreaElement)?.value
-              const msg = encodeURIComponent(`Halo Shofi Bakery!\n\nNama: *${nama}*\nPesan: ${pesan}`)
-              window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank')
+              const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Halo Shofi Bakery!\nNama: ${nama}\nPesan: ${pesan}`)}`
+              const newTab = window.open(waUrl, '_blank')
+              if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+                window.location.href = waUrl
+              }
             }}>
               <h3>Kirim Pesan</h3>
               <div className="form-group">
@@ -605,7 +607,7 @@ export default function App() {
           </div>
         </div>
         <div className="footer-bar">
-          <p>2024 Shofi Bakery. All rights reserved.</p>
+          <p>© 2026 Shofi Bakery. All rights reserved.</p>
         </div>
       </footer>
 
